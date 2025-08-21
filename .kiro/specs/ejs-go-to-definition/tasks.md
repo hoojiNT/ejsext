@@ -11,7 +11,9 @@
   - Define data models for symbols, locations, and document cache
   - _Requirements: 1.1, 2.1, 3.1_
 
-- [-] 2. Implement EJS parser for JavaScript block extraction
+- [x] 2. Implement EJS parser for JavaScript block extraction
+
+
 
 
 

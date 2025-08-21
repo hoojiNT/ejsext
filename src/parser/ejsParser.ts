@@ -37,12 +37,8 @@ export class EJSParser implements IEJSParser {
     const lines = content.split('\n');
     
     // Regex patterns for different EJS tag types
+    // Order matters: more specific patterns first
     const patterns = [
-      {
-        // Scriptlet tags: <% code %>
-        regex: /<%\s*((?:(?!%>)[\s\S])*?)\s*%>/g,
-        tagType: 'scriptlet' as const
-      },
       {
         // Unescaped output tags: <%- expression %>
         regex: /<%-\s*((?:(?!%>)[\s\S])*?)\s*%>/g,
@@ -52,6 +48,11 @@ export class EJSParser implements IEJSParser {
         // Escaped output tags: <%= expression %>
         regex: /<%=\s*((?:(?!%>)[\s\S])*?)\s*%>/g,
         tagType: 'output' as const
+      },
+      {
+        // Scriptlet tags: <% code %> (must be last to avoid matching <%- and <%=)
+        regex: /<%(?![-=])\s*((?:(?!%>)[\s\S])*?)\s*%>/g,
+        tagType: 'scriptlet' as const
       }
     ];
 
