@@ -1,0 +1,95 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "EJS",
+  "scopeName": "text.html.ejs",
+  "patterns": [
+    {
+      "include": "#ejs-comment"
+    },
+    {
+      "include": "#ejs-scriptlet"
+    },
+    {
+      "include": "#ejs-expression"
+    },
+    {
+      "include": "#ejs-raw-output"
+    },
+    {
+      "include": "text.html.basic"
+    }
+  ],
+  "repository": {
+    "ejs-comment": {
+      "name": "comment.block.ejs",
+      "begin": "<%#",
+      "end": "%>",
+      "patterns": [
+        {
+          "name": "comment.block.ejs",
+          "match": ".*"
+        }
+      ]
+    },
+    "ejs-scriptlet": {
+      "name": "meta.embedded.block.ejs",
+      "begin": "<%(?!%|=|-)",
+      "end": "%>",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.embedded.begin.ejs"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.embedded.end.ejs"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.js"
+        }
+      ]
+    },
+    "ejs-expression": {
+      "name": "meta.embedded.line.ejs",
+      "begin": "<%=",
+      "end": "%>",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.embedded.begin.ejs"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.embedded.end.ejs"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.js"
+        }
+      ]
+    },
+    "ejs-raw-output": {
+      "name": "meta.embedded.line.ejs",
+      "begin": "<%-",
+      "end": "%>",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.embedded.begin.ejs"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.embedded.end.ejs"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.js"
+        }
+      ]
+    }
+  }
+}

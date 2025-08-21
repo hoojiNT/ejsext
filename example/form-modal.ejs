@@ -1,0 +1,294 @@
+<% const _viewsPath = '../../../..'; %>
+<% const _editing = (typeof editing !== 'undefined' && editing) ? editing : {}; %>
+<% const _socialChannel = _editing?.socialChannel || {}; %>
+<% const _socialChannelUrl = _editing?.url || _socialChannel?.url || ''; %>
+<% const _socialChannelName = _editing?.name || _socialChannel?.name || ''; %>
+<% const _socialChannelUniqueId = _socialChannel?.uniqueId || ''; %>
+<% const _socialChannelPicture = _editing?.picture || _socialChannel?.picture || ''; %>
+<% const _socialChannelPlatformType = _socialChannel?.platformType || ''; %>
+<% const _socialChannelIsVerified = _socialChannel?.isVerified || ''; %>
+<% const _socialChannelStatus = _socialChannel?.youtubeInfo?.status || ''; %>
+<% const _socialChannelRejectReason = _socialChannel?.youtubeInfo?.rejectReason || ''; %>
+<% const _socialChannelPublishedAt = _socialChannel?.publishedAt || ''; %>
+<% const _socialChannelSortableStatistics = _editing?.statistics ? Object.entries(_editing?.statistics).sort(function (a, b) {
+  return parseInt(b[1]) - parseInt(a[1]);
+}) : null; %>
+
+<div class="modal modal-lg fade" id="modal-salestream-channel-form" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-scrollable" style="max-width:776px;height:auto">
+    <form id="frmSalestreamChannel" data-id="<%= _editing?.id || '' %>">
+      <div class="modal-content">
+        <div class="modal-header">
+          <strong class="modal-title"><%= _editing?.id ? 'Chỉnh sửa kênh' : 'Thêm kênh mới' %></strong>
+
+          <%- include(`${_viewsPath}/components/ui/buttons/index.ejs`, {
+            type: 'button',
+            buttonType: 'plain',
+            classes: 'btn-close',
+            icon: '<i class="m-icon icon-xmark"></i>',
+            attr: 'data-bs-dismiss="modal" aria-label="Close"',
+          }); %>
+        </div>
+        <div class="modal-body">
+          <%- include(`${_viewsPath}/components/ui/alerts/index.ejs`, { status: 'critical' }); %>
+
+          <div class="row g-5">
+            <div class="col-12">
+              <div class="row gy-2">
+                <div class="col-12">
+                  <%- include(`${_viewsPath}/components/ui/forms/input.ejs`, {
+                    type: 'text',
+                    inputType: 'group',
+                    id: 'url',
+                    name: 'url',
+                    label: 'Kênh YouTube',
+                    iconLeft: `<span class="overflow-hidden rounded-circle"><img src="${BASE_URL}/images/icons/youtube.round.svg" class="lazy avatar-s" alt=""></span>`,
+                    placeholder: 'https://www.youtube.com/@handle',
+                    caption: 'Format https://www.youtube.com/channel/[channel ID] hoặc https://www.youtube.com/@handle',
+                    value: _editing?.url || '',
+                    required: true,
+                    disabled: _editing?.id,
+                  }); %>
+                </div>
+
+                <% if (_editing?.id) { %>
+                <div class="col-12">
+                  <div class="p-3 border border-subdued rounded-4">
+                    <div class="row gx-3 flex-nowrap">
+                      <div class="col min-w-0">
+                        <div class="row g-3 align-items-center flex-nowrap">
+                          <div class="col-auto" data-permission-ui="url">
+                            <a href="<%= _socialChannelUrl %>" target="_blank">
+                              <div class="position-relative">
+                                <img src="<%= (_socialChannelPicture && _socialChannelPicture.startsWith('http')) ? _socialChannelPicture : _socialChannelPicture ? common.processImageUrl({url: _socialChannelPicture, size: '120x120'}) : NO_IMAGE %>" class="avatar-lg border border-subdued rounded-circle" alt="<%= _socialChannelName %>">
+
+                                <% if (dataClient.socialChannelPlatform.filter(n => n?.value === Number(_socialChannelPlatformType))?.length) { %>
+                                <img src="<% BASE_URL %>/images/icons/<%= dataClient.socialChannelPlatform.find(n => n?.value === Number(_socialChannelPlatformType))?.name.toLowerCase() %>.round.svg" class="position-absolute avatar-s rounded-circle" alt="" style="right:0;bottom:0">
+                                <% } %>
+                              </div>
+                            </a>
+                          </div>
+                          <div class="col min-w-0">
+                            <div class="row gx-3 justify-content-between flex-nowrap">
+                              <div class="col min-w-0">
+                                <div class="row gx-1 align-items-center w-100">
+                                  <div class="col-auto min-w-0">
+                                    <a href="<%= _socialChannelUrl %>" target="_blank" class="d-block text-highlight font-15 fw-500 lh-20 text-truncate" data-permission-ui="name || uniqueId">
+                                      <%= _socialChannelName || _socialChannelUniqueId %>
+                                    </a>
+                                  </div>
+
+                                  <% if (_socialChannelIsVerified?.value && _socialChannelIsVerified?.value !== 'false') { %>
+                                  <div class="col-auto min-w-0">
+                                    <i class="m-icon icon-checkmark-circle-fill text-highlight align-middle"></i>
+                                  </div>
+                                  <% } %>
+                                </div>
+                                <div class="d-block mt-1 text-primary font-13 lh-16 text-truncate" data-permission-ui="uniqueId"><%= _socialChannelUniqueId %></div>
+                              </div>
+                            </div>
+
+                            <% if (_socialChannelPublishedAt?.seconds || _socialChannelPublishedAt?.nanos) { %>
+                            <div class="mt-1 text-secondary font-13 lh-16" data-permission-ui="publishedAt">
+                              <span>Tạo kênh </span>
+                              <span data-utc-time="<%= common.timestampToDate(_socialChannelPublishedAt) %>" data-utc-format="DD/MM/YYYY">
+                                <%= common.dateFormat(common.timestampToDate(_socialChannelPublishedAt), 'DD/MM/YYYY') %>
+                              </span>
+                            </div>
+                            <% } %>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-5">
+                        <% if (_socialChannelSortableStatistics?.length) { %>
+                        <div data-permission-ui="statistics">
+                          <div class="row g-5">
+                            <% _socialChannelSortableStatistics.forEach(item => { %>
+                            <% if (Number(item[1])) { %>
+                            <div class="col-6">
+                              <span class="d-block text-primary font-13 fw-500 lh-16">
+                                <%= {
+                                  likeCount: "Likes",
+                                  viewCount: "Views",
+                                  subscriberCount: "Subscribers",
+                                  videoCount: "Videos",
+                                  followerCount: "Followers",
+                                  followingCount: "Followings",
+                                  heartCount: "Hearts",
+                                  diggCount: "Diggs",
+                                  monthlyListeners: "Monthly Listeners",
+                                  postCount: "Posts",
+                                  memberCount: "Members",
+                                }[item[0]] || ''; %>
+                              </span>
+                              <div class="mt-1 text-primary font-0 lh-normal">
+                                <strong class="d-block font-20 font-xl-24 fw-400 lh-28">
+                                  <%= common.numberFormatCompact(Number(item[1]) || 0); %>
+                                </strong>
+                              </div>
+                            </div>
+                            <% } %>
+                            <% }); %>
+                          </div>
+                        </div>
+                        <% } %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <% } %>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <% const _user = req?.user || {}; %>
+              <% const _manageByInfo = _editing?.managedByInfo || {}; %>
+              <% const _manageBy = _editing?.id ? _editing?.managedBy || "" : _user?.id || ""; %>
+              <% const _manageByPicture = _editing?.id ? _manageByInfo?.picture || "" : _user?.picture || ""; %>
+              <% const _manageByName = _editing?.id ? _manageByInfo?.name || _manageByInfo?.fullName || _manageByInfo?.attribute?.displayName || "" : _user?.name || _user?.fullName || _user?.attribute?.displayName || ""; %>
+              <% const _manageByEmail = _editing?.id ? _manageByInfo?.email || "" : _user?.email || ""; %>
+
+              <div class="form-group">
+                <label for="managedBy" class="form-group__label">Người liên hệ <span class="text-critical">*</span></label>
+                <div class="d-inline-block position-relative max-w-100 select2-element mt-1 w-100">
+                  <div class="w-100" role="button" data-select2-element select2-template-result="IdentitySalestreamChannelListing" select2-limit="50" select2-url="<%= BASE_URL %>/api/identity/user?fields[isEmployee][value]=true" select2-method="GET" select2-text-field="name || fullName || attribute?.displayName" select2-id-field="id" onchange="window.IdentitySalestreamChannelListing.initOnChangeUser(this)">
+                    <div class="row gx-2 align-items-center flex-nowrap">
+                      <div class="col-auto">
+                        <img class="rounded-circle avatar-sm border" data-user="picture" src="<%= _manageByPicture ? common.processImageUrl({url: _manageByPicture || '', size: '120x120'}) : NO_IMAGE %>" alt="<%= _manageByName %>" />
+                      </div>
+                      <div class="col min-w-0">
+                        <div class="mb-1 text-primary font-15 fw-400 lh-20 text-truncate" data-user="name"><%= _manageByName || 'Chọn người liên hệ' %></div>
+                        <div class="text-secondary font-13 fw-400 lh-16 text-break text-truncate" data-user="email"><%= _manageByEmail || '@email' %></div>
+                      </div>
+                      <div class="col-auto ms-auto">
+                        <i class="m-icon icon-arrow-dropdown text-secondary"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <input type="hidden" class="hidden" data-user="id" required name="managedBy" value="<%= _manageBy || '' %>" />
+              </div>
+            </div>
+            <div class="col-md-6">
+              <% const _today = !_editing?.id ? common.dateToTimestamp(new Date()) : undefined; %>
+              <% const _contactedTime = _editing?.contactedTime; %>
+
+              <div class="form-group">
+                <label for="contactedTime" class="form-group__label">Ngày liên hệ <span class="text-critical">*</span></label>
+                <div class="form-group__group form-group__group--right">
+                  <input type="text" class="form-group__control position-relative z-index-1" placeholder="Ngày liên hệ" required name="contactedTime" data-flatpickr data-mode="single" data-allow-input="true" data-toggle="input-mask" data-mask-format="00/00/0000" maxlength="10" autocomplete="off" <%- (_contactedTime?.seconds || _contactedTime?.nanos || _today) ? `data-default-date="${common.dateFormat(common.timestampToDate(_contactedTime || _today), 'DD/MM/YYYY')}"` : '' %> <%- (_contactedTime?.seconds || _contactedTime?.nanos || _today) ? `data-utc-time="${common.timestampToDate(_contactedTime || _today)}"` : '' %> data-max-date="today" <%= _editing?.id ? 'disabled' : '' %> />
+                  <div class="form-group__item-right">
+                    <i class="m-icon icon-calendar"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="vertical" class="form-group__label">Vertical <span class="text-critical">*</span></label>
+                <select class="form-group__control" data-toggle="select2" data-width="100%" name="vertical" select2-placeholder="Chọn vertical" required>
+                  <option></option>
+                  <% dataClient.socialChannelYoutubeInfoVertical.forEach(item => { %>
+                  <option value="<%= item?.name %>" <%- _editing?.vertical === item?.name ? 'selected' : '' %>><%= item?.name %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="subCategory" class="form-group__label">Sub vertical <span class="text-critical">*</span></label>
+                <select class="form-group__control" multiple data-toggle="select2" data-width="100%" name="subCategory" select2-placeholder="Chọn sub vertical" required>
+                  <option></option>
+                  <% dataClient.socialChannelYoutubeInfoSubCategory.forEach(item => { %>
+                  <option value="<%= item?.name %>" <%- (_editing?.subCategory?.length && _editing?.subCategory.filter(n=> n === item?.name)?.length) ? 'selected' : '' %>><%= item?.name %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+            <div class="col-12">
+              <%- include(`${_viewsPath}/components/ui/forms/input.ejs`, {
+                type: 'text',
+                inputType: 'group',
+                id: 'tiktokUrl',
+                name: 'tiktokUrl',
+                label: 'Kênh TikTok',
+                iconLeft: `<span class="overflow-hidden rounded-circle"><img src="${BASE_URL}/images/icons/tiktok.round.svg" class="lazy avatar-s" alt=""></span>`,
+                placeholder: 'https://www.tiktok.com/@handle',
+                value: _editing?.otherPlatformInfo?.tiktokUrl || '',
+              }); %>
+            </div>
+            <div class="col-12">
+              <%- include(`${_viewsPath}/components/ui/forms/input.ejs`, {
+                type: 'text',
+                inputType: 'group',
+                id: 'facebookUrl',
+                name: 'facebookUrl',
+                label: 'Kênh Facebook',
+                iconLeft: `<span class="overflow-hidden rounded-circle"><img src="${BASE_URL}/images/icons/facebook.round.svg" class="lazy avatar-s" alt=""></span>`,
+                placeholder: 'https://www.facebook.com/@handle',
+                value: _editing?.otherPlatformInfo?.facebookUrl || '',
+                classes: 'contact-group'
+              }); %>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="email" class="form-group__label">Email</label>
+                <input type="email" name="email" data-form-check-valid placeholder="Email liên hệ" class="form-group__control contact-group" value="<%= _editing?.contactEmail || '' %>" />
+              </div>
+            </div>
+            <div class="col-md-6" data-permission-ui="phoneNumber">
+              <%- include(`${_viewsPath}/components/ui/forms/input.ejs`, {
+                    inputType: 'phone',
+                    label: 'Số điện thoại',
+                    name: 'phoneNumber.number',
+                    value: _editing?.phoneNumber?.number || '',
+                    placeholder: 'Số điện thoại',
+                    phoneSelectName: 'phoneNumber.code',
+                    phoneSelectValueId: _editing?.phoneNumber?.code || 'VN',
+                    phoneSelectValueText: _editing?.phoneNumber?.prefix ? `+${_editing?.phoneNumber?.prefix}` : '+84',
+                    attr: 'data-form-check-valid',
+                    classes: 'contact-group'
+                  }); %>
+            </div>
+            <div class="col-12">
+              <%- include(`${_viewsPath}/components/ui/forms/textarea.ejs`, {
+                id: 'contactNote',
+                label: 'Thông tin liên hệ khác',
+                placeholder: 'Nhập thông tin liên hệ khác nếu có',
+                value: _editing?.contactNote || '',
+              }); %>
+            </div>
+            <div class="col-12">
+              <%- include(`${_viewsPath}/components/ui/forms/textarea.ejs`, {
+                id: 'note',
+                label: 'Ghi chú',
+                placeholder: 'Nhập ghi chú nếu có',
+                value: _editing?.note || '',
+              }); %>
+            </div>
+            <div class="col-12" id="warning-message">
+              <div class="p-3 border border-warning rounded-8 d-inline-flex" style="background-color: #fdf7ee;">
+                <i class="m-icon icon-info-circle-fill text-warning font-24 align-middle" style="margin-right: 4px;"></i>
+                <strong class="text-warning font-15 fw-400 lh-24 align-middle">Vui lòng điền ít nhất một hình thức liên hệ: kênh Facebook, email, số điện thoại hoặc thông tin liên hệ khác.</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top">
+          <%- include(`${_viewsPath}/components/ui/buttons/index.ejs`, {
+            type: 'button',
+            buttonType: 'outline',
+            label: 'Hủy',
+            attr: 'data-bs-dismiss="modal"',
+          }); %>
+
+          <%- include(`${_viewsPath}/components/ui/buttons/index.ejs`, {
+            type: 'submit',
+            buttonType: 'primary',
+            label: 'Hoàn tất',
+          }); %>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
