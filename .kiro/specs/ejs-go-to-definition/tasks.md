@@ -53,7 +53,12 @@
   - Write unit tests for hover provider functionality
   - _Requirements: 1.2, 4.1, 4.2_
 
-- [ ] 6. Add visual feedback and cursor behavior
+- [x] 6. Add visual feedback and cursor behavior
+
+
+
+
+
 
   - Implement cursor change to indicate clickable variables on hover
   - Add variable highlighting/underlining when hovering over defined variables

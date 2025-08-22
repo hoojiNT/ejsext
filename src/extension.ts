@@ -8,7 +8,9 @@ import {
   SymbolAnalyzer, 
   DocumentCacheManager,
   EJSDefinitionProvider,
-  EJSHoverProvider 
+  EJSHoverProvider,
+  EJSVisualFeedbackProvider,
+  EJSCursorManager
 } from './index';
 
 /**
@@ -26,6 +28,10 @@ export function activate(context: vscode.ExtensionContext) {
   // Initialize providers
   const definitionProvider = new EJSDefinitionProvider(parser, symbolAnalyzer);
   const hoverProvider = new EJSHoverProvider(parser, symbolAnalyzer);
+  const visualFeedbackProvider = new EJSVisualFeedbackProvider(parser, symbolAnalyzer);
+  
+  // Initialize cursor manager
+  const cursorManager = new EJSCursorManager(visualFeedbackProvider);
 
   // Register providers for EJS files
   const ejsSelector: vscode.DocumentSelector = { language: 'ejs', scheme: 'file' };
@@ -42,8 +48,14 @@ export function activate(context: vscode.ExtensionContext) {
     hoverProvider
   );
 
+  // Register Document Highlight Provider (for variable highlighting)
+  const highlightDisposable = vscode.languages.registerDocumentHighlightProvider(
+    ejsSelector,
+    visualFeedbackProvider
+  );
+
   // Add disposables to context
-  context.subscriptions.push(definitionDisposable, hoverDisposable);
+  context.subscriptions.push(definitionDisposable, hoverDisposable, highlightDisposable);
 
   // Optional: Add document change listener for cache invalidation
   const documentChangeDisposable = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -53,6 +65,11 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   context.subscriptions.push(documentChangeDisposable);
+
+  // Add cursor manager to disposables
+  context.subscriptions.push({
+    dispose: () => cursorManager.dispose()
+  });
 }
 
 /**

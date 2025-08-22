@@ -5,5 +5,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+    alias: {
+      vscode: new URL('./test/mocks/vscode.ts', import.meta.url).pathname
+    }
   },
 });

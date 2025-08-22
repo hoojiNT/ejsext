@@ -17,3 +17,5 @@ export { DocumentCacheManager } from './cache/documentCache';
 // VS Code providers
 export { EJSDefinitionProvider } from './providers/definitionProvider';
 export { EJSHoverProvider } from './providers/hoverProvider';
+export { EJSVisualFeedbackProvider } from './providers/visualFeedbackProvider';
+export { EJSCursorManager } from './providers/cursorManager';

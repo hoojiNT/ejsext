@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import { IEJSParser, ISymbolAnalyzer } from '../interfaces';
+import { EJSVisualFeedbackProvider } from './visualFeedbackProvider';
 
 /**
  * Provides "Go to Definition" functionality for EJS templates
@@ -66,6 +67,9 @@ export class EJSDefinitionProvider implements vscode.DefinitionProvider {
         document.uri,
         new vscode.Position(definition.definition.line, definition.definition.character)
       );
+
+      // Schedule target line highlighting after navigation
+      this.scheduleTargetLineHighlight(definition.definition.line);
 
       return definitionLocation;
     } catch (error) {
@@ -165,5 +169,19 @@ export class EJSDefinitionProvider implements vscode.DefinitionProvider {
     ];
     
     return keywords.includes(word);
+  }
+
+  /**
+   * Schedule target line highlighting after Go to Definition navigation
+   * @param line The line number to highlight (0-based)
+   */
+  private scheduleTargetLineHighlight(line: number): void {
+    // Use a small delay to ensure navigation has completed
+    setTimeout(() => {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (activeEditor && activeEditor.document.languageId === 'ejs') {
+        EJSVisualFeedbackProvider.highlightTargetLine(activeEditor, line);
+      }
+    }, 100);
   }
 }

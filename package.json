@@ -1,5 +1,5 @@
 {
-  "name": "ejs-syntax-highlighting",
+  "name": "better-ejs",
   "displayName": "Better EJS",
   "description": "Syntax highlighting support for EJS templates",
   "repository": {
