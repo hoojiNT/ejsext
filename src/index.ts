@@ -13,6 +13,7 @@ export * from './interfaces';
 export { EJSParser } from './parser/ejsParser';
 export { SymbolAnalyzer } from './analyzer/symbolAnalyzer';
 export { DocumentCacheManager } from './cache/documentCache';
+export { PerformanceMonitor } from './cache/performanceMonitor';
 
 // VS Code providers
 export { EJSDefinitionProvider } from './providers/definitionProvider';

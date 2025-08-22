@@ -3,7 +3,7 @@
  */
 
 import * as vscode from 'vscode';
-import { IEJSParser, ISymbolAnalyzer } from '../interfaces';
+import { IEJSParser, ISymbolAnalyzer, IDocumentCache } from '../interfaces';
 import { EJSVisualFeedbackProvider } from './visualFeedbackProvider';
 
 /**
@@ -12,7 +12,8 @@ import { EJSVisualFeedbackProvider } from './visualFeedbackProvider';
 export class EJSDefinitionProvider implements vscode.DefinitionProvider {
   constructor(
     private parser: IEJSParser,
-    private symbolAnalyzer: ISymbolAnalyzer
+    private symbolAnalyzer: ISymbolAnalyzer,
+    private cache: IDocumentCache
   ) {}
 
   /**
@@ -27,54 +28,113 @@ export class EJSDefinitionProvider implements vscode.DefinitionProvider {
     position: vscode.Position,
     token: vscode.CancellationToken
   ): vscode.ProviderResult<vscode.Definition> {
+    const startTime = Date.now();
+    
     try {
       // Check if cancellation was requested
       if (token.isCancellationRequested) {
         return null;
       }
 
-      // Parse the document to extract JavaScript blocks
-      const parsedDocument = this.parser.parseDocument(document);
+      // Performance timeout check
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), 500); // 500ms timeout as per requirements
+      });
+
+      const definitionPromise = this.findDefinitionInternal(document, position, token);
       
-      // Check if we're inside a JavaScript block
-      const currentBlock = this.findBlockAtPosition(parsedDocument.jsBlocks, position);
-      if (!currentBlock) {
-        return null; // Not inside a JavaScript block
-      }
-
-      // Get the word at the current position
-      const wordRange = document.getWordRangeAtPosition(position);
-      if (!wordRange) {
-        return null; // No word at position
-      }
-
-      const symbolName = document.getText(wordRange);
-      if (!symbolName || !this.isValidIdentifier(symbolName)) {
-        return null; // Not a valid identifier
-      }
-
-      // Analyze symbols in all JavaScript blocks
-      const symbols = this.symbolAnalyzer.analyzeSymbols(parsedDocument.jsBlocks);
-      
-      // Find the definition for this symbol
-      const definition = this.findSymbolDefinition(symbols, symbolName);
-      if (!definition) {
-        return null; // Definition not found
-      }
-
-      // Convert our Location to VS Code Location
-      const definitionLocation = new vscode.Location(
-        document.uri,
-        new vscode.Position(definition.definition.line, definition.definition.character)
-      );
-
-      // Schedule target line highlighting after navigation
-      this.scheduleTargetLineHighlight(definition.definition.line);
-
-      return definitionLocation;
+      // Race between definition finding and timeout
+      return Promise.race([definitionPromise, timeoutPromise]);
     } catch (error) {
       // Log error but don't throw - VS Code expects graceful handling
       console.error('Error in EJS Definition Provider:', error);
+      return null;
+    } finally {
+      // Record performance metrics
+      const parseTime = Date.now() - startTime;
+      this.cache.recordParseTime(parseTime);
+    }
+  }
+
+  /**
+   * Internal method to find definition with caching
+   * @param document The document
+   * @param position The position
+   * @param token Cancellation token
+   * @returns Definition location or null
+   */
+  private async findDefinitionInternal(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): Promise<vscode.Definition | null> {
+    try {
+      // Try to get cached parsed document
+      let parsedDocument = this.cache.getParsedDocument(document.uri.toString(), document.version);
+      
+      if (!parsedDocument) {
+        // Parse the document to extract JavaScript blocks
+        parsedDocument = this.parser.parseDocument(document);
+        
+        // Cache the parsed document
+        this.cache.setParsedDocument(document.uri.toString(), document.version, parsedDocument);
+      }
+    
+    // Check if we're inside a JavaScript block
+    const currentBlock = this.findBlockAtPosition(parsedDocument.jsBlocks, position);
+    if (!currentBlock) {
+      return null; // Not inside a JavaScript block
+    }
+
+    // Get the word at the current position
+    const wordRange = document.getWordRangeAtPosition(position);
+    if (!wordRange) {
+      return null; // No word at position
+    }
+
+    const symbolName = document.getText(wordRange);
+    if (!symbolName || !this.isValidIdentifier(symbolName)) {
+      return null; // Not a valid identifier
+    }
+
+    // Check for cancellation before expensive operations
+    if (token.isCancellationRequested) {
+      return null;
+    }
+
+    // Try to get cached symbols
+    let symbolIndex = this.cache.getSymbols(document.uri.toString(), document.version);
+    
+    if (!symbolIndex) {
+      // Analyze symbols in all JavaScript blocks
+      const symbols = this.symbolAnalyzer.analyzeSymbols(parsedDocument.jsBlocks);
+      
+      // Create optimized symbol index
+      symbolIndex = this.cache.createSymbolIndex(symbols);
+      
+      // Cache the symbol index
+      this.cache.setSymbols(document.uri.toString(), document.version, symbolIndex);
+    }
+    
+    // Find the definition for this symbol using optimized lookup
+    const definition = this.findSymbolDefinitionOptimized(symbolIndex, symbolName);
+    if (!definition) {
+      return null; // Definition not found
+    }
+
+    // Convert our Location to VS Code Location
+    const definitionLocation = new vscode.Location(
+      document.uri,
+      new vscode.Position(definition.definition.line, definition.definition.character)
+    );
+
+    // Schedule target line highlighting after navigation
+    this.scheduleTargetLineHighlight(definition.definition.line);
+
+    return definitionLocation;
+    } catch (error) {
+      // Log error but don't throw - VS Code expects graceful handling
+      console.error('Error in EJS Definition Provider (internal):', error);
       return null;
     }
   }
@@ -118,7 +178,24 @@ export class EJSDefinitionProvider implements vscode.DefinitionProvider {
   }
 
   /**
-   * Find the definition of a symbol by name
+   * Find the definition of a symbol by name using optimized lookup
+   * @param symbolIndex Optimized symbol index map
+   * @param symbolName Name of the symbol to find
+   * @returns Symbol information if found, null otherwise
+   */
+  private findSymbolDefinitionOptimized(symbolIndex: Map<string, any[]>, symbolName: string): any | null {
+    const matchingSymbols = symbolIndex.get(symbolName);
+    
+    if (!matchingSymbols || matchingSymbols.length === 0) {
+      return null;
+    }
+
+    // Return the first definition found (symbols are already sorted in the index)
+    return matchingSymbols[0];
+  }
+
+  /**
+   * Find the definition of a symbol by name (legacy method for compatibility)
    * @param symbols Array of all symbols found in the document
    * @param symbolName Name of the symbol to find
    * @returns Symbol information if found, null otherwise

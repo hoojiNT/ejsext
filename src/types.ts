@@ -88,6 +88,6 @@ export interface ParsedEJSDocument {
 export interface DocumentCache {
   uri: string;
   version: number;
-  symbols: Map<string, SymbolDefinition[]>;
+  symbols: Map<string, SymbolInfo[]>;
   lastParsed: number;
 }

@@ -54,7 +54,7 @@ export interface IDocumentCache {
    * @param version Document version
    * @returns Cached symbols if available and up-to-date, null otherwise
    */
-  getSymbols(uri: string, version: number): Map<string, SymbolDefinition[]> | null;
+  getSymbols(uri: string, version: number): Map<string, SymbolInfo[]> | null;
 
   /**
    * Cache symbols for a document
@@ -62,7 +62,36 @@ export interface IDocumentCache {
    * @param version Document version
    * @param symbols Symbols to cache
    */
-  setSymbols(uri: string, version: number, symbols: Map<string, SymbolDefinition[]>): void;
+  setSymbols(uri: string, version: number, symbols: Map<string, SymbolInfo[]>): void;
+
+  /**
+   * Get cached parsed document
+   * @param uri Document URI
+   * @param version Document version
+   * @returns Cached parsed document if available and up-to-date, null otherwise
+   */
+  getParsedDocument(uri: string, version: number): ParsedEJSDocument | null;
+
+  /**
+   * Cache parsed document
+   * @param uri Document URI
+   * @param version Document version
+   * @param document Parsed document to cache
+   */
+  setParsedDocument(uri: string, version: number, document: ParsedEJSDocument): void;
+
+  /**
+   * Record parsing performance metrics
+   * @param parseTime Time taken to parse in milliseconds
+   */
+  recordParseTime(parseTime: number): void;
+
+  /**
+   * Create optimized symbol lookup index
+   * @param symbols Array of symbols to index
+   * @returns Map for fast symbol lookup
+   */
+  createSymbolIndex(symbols: SymbolInfo[]): Map<string, SymbolInfo[]>;
 
   /**
    * Clear cache for a specific document
@@ -74,4 +103,32 @@ export interface IDocumentCache {
    * Clear all cached data
    */
   clearAll(): void;
+
+  /**
+   * Enable or disable performance logging
+   * @param enabled Whether to enable performance logging
+   */
+  setPerformanceLogging(enabled: boolean): void;
+
+  /**
+   * Show detailed performance report
+   */
+  showPerformanceReport(): void;
+
+  /**
+   * Check if cache performance is acceptable
+   * @returns True if performance is within acceptable limits
+   */
+  isPerformanceAcceptable(): boolean;
+
+  /**
+   * Get performance improvement recommendations
+   * @returns Array of recommendations
+   */
+  getPerformanceRecommendations(): string[];
+
+  /**
+   * Dispose of the cache manager and cleanup resources
+   */
+  dispose(): void;
 }

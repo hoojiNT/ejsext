@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import { EJSDefinitionProvider } from './definitionProvider';
 import { EJSParser } from '../parser/ejsParser';
 import { SymbolAnalyzer } from '../analyzer/symbolAnalyzer';
+import { DocumentCacheManager } from '../cache/documentCache';
 import { JavaScriptBlock, SymbolInfo, SymbolKind } from '../types';
 
 // Mock VS Code API
@@ -20,13 +21,15 @@ describe('EJSDefinitionProvider', () => {
   let definitionProvider: EJSDefinitionProvider;
   let mockParser: EJSParser;
   let mockSymbolAnalyzer: SymbolAnalyzer;
+  let mockCache: DocumentCacheManager;
   let mockDocument: vscode.TextDocument;
   let mockCancellationToken: vscode.CancellationToken;
 
   beforeEach(() => {
     mockParser = new EJSParser();
     mockSymbolAnalyzer = new SymbolAnalyzer();
-    definitionProvider = new EJSDefinitionProvider(mockParser, mockSymbolAnalyzer);
+    mockCache = new DocumentCacheManager();
+    definitionProvider = new EJSDefinitionProvider(mockParser, mockSymbolAnalyzer, mockCache);
 
     // Mock document
     mockDocument = {
@@ -67,7 +70,7 @@ describe('EJSDefinitionProvider', () => {
       });
 
       const position = new vscode.Position(0, 5);
-      const result = definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
+      const result = await definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
 
       expect(result).toBeNull();
     });
@@ -93,7 +96,7 @@ describe('EJSDefinitionProvider', () => {
       });
 
       const position = new vscode.Position(0, 10);
-      const result = definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
+      const result = await definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
 
       expect(result).toBeNull();
     });
@@ -126,7 +129,7 @@ describe('EJSDefinitionProvider', () => {
       });
 
       const position = new vscode.Position(0, 5);
-      const result = definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
+      const result = await definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
 
       expect(result).toBeNull();
     });
@@ -180,7 +183,7 @@ describe('EJSDefinitionProvider', () => {
       vi.spyOn(mockSymbolAnalyzer, 'analyzeSymbols').mockReturnValue(symbols);
 
       const position = new vscode.Position(0, 40);
-      const result = definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
+      const result = await definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
 
       expect(result).toBeDefined();
       expect(result).toHaveProperty('uri');
@@ -217,7 +220,7 @@ describe('EJSDefinitionProvider', () => {
       vi.spyOn(mockSymbolAnalyzer, 'analyzeSymbols').mockReturnValue([]);
 
       const position = new vscode.Position(0, 10);
-      const result = definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
+      const result = await definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
 
       expect(result).toBeNull();
     });
@@ -289,7 +292,7 @@ describe('EJSDefinitionProvider', () => {
       vi.spyOn(mockSymbolAnalyzer, 'analyzeSymbols').mockReturnValue(symbols);
 
       const position = new vscode.Position(0, 56);
-      const result = definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
+      const result = await definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
 
       expect(result).toBeDefined();
       expect(result).toHaveProperty('uri');
@@ -305,7 +308,7 @@ describe('EJSDefinitionProvider', () => {
       } as any;
 
       const position = new vscode.Position(0, 0);
-      const result = definitionProvider.provideDefinition(mockDocument, position, cancelledToken);
+      const result = await definitionProvider.provideDefinition(mockDocument, position, cancelledToken);
 
       expect(result).toBeNull();
     });
@@ -318,7 +321,7 @@ describe('EJSDefinitionProvider', () => {
       });
 
       const position = new vscode.Position(0, 10);
-      const result = definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
+      const result = await definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
 
       expect(result).toBeNull();
     });
@@ -372,7 +375,7 @@ describe('EJSDefinitionProvider', () => {
       vi.spyOn(mockSymbolAnalyzer, 'analyzeSymbols').mockReturnValue(symbols);
 
       const position = new vscode.Position(0, 32);
-      const result = definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
+      const result = await definitionProvider.provideDefinition(mockDocument, position, mockCancellationToken);
 
       expect(result).toBeDefined();
       expect(result).toHaveProperty('uri');

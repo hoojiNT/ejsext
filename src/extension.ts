@@ -25,9 +25,9 @@ export function activate(context: vscode.ExtensionContext) {
   const symbolAnalyzer = new SymbolAnalyzer();
   const documentCache = new DocumentCacheManager();
 
-  // Initialize providers
-  const definitionProvider = new EJSDefinitionProvider(parser, symbolAnalyzer);
-  const hoverProvider = new EJSHoverProvider(parser, symbolAnalyzer);
+  // Initialize providers with cache
+  const definitionProvider = new EJSDefinitionProvider(parser, symbolAnalyzer, documentCache);
+  const hoverProvider = new EJSHoverProvider(parser, symbolAnalyzer, documentCache);
   const visualFeedbackProvider = new EJSVisualFeedbackProvider(parser, symbolAnalyzer);
   
   // Initialize cursor manager
@@ -57,18 +57,30 @@ export function activate(context: vscode.ExtensionContext) {
   // Add disposables to context
   context.subscriptions.push(definitionDisposable, hoverDisposable, highlightDisposable);
 
-  // Optional: Add document change listener for cache invalidation
+  // Add document change listener for cache invalidation
   const documentChangeDisposable = vscode.workspace.onDidChangeTextDocument((event) => {
     if (event.document.languageId === 'ejs') {
       documentCache.clearDocument(event.document.uri.toString());
     }
   });
 
-  context.subscriptions.push(documentChangeDisposable);
+  // Add document close listener for cache cleanup
+  const documentCloseDisposable = vscode.workspace.onDidCloseTextDocument((document) => {
+    if (document.languageId === 'ejs') {
+      documentCache.clearDocument(document.uri.toString());
+    }
+  });
+
+  context.subscriptions.push(documentChangeDisposable, documentCloseDisposable);
 
   // Add cursor manager to disposables
   context.subscriptions.push({
     dispose: () => cursorManager.dispose()
+  });
+
+  // Add cache manager to disposables
+  context.subscriptions.push({
+    dispose: () => documentCache.dispose()
   });
 }
 

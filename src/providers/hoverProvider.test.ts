@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import * as vscode from "vscode";
 import { EJSHoverProvider } from "./hoverProvider";
 import { IEJSParser, ISymbolAnalyzer } from "../interfaces";
+import { DocumentCacheManager } from "../cache/documentCache";
 import {
   SymbolInfo,
   SymbolKind,
@@ -73,17 +74,18 @@ describe("EJSHoverProvider", () => {
       isCancellationRequested: false,
     } as any;
 
-    hoverProvider = new EJSHoverProvider(mockParser, mockSymbolAnalyzer);
+    const mockCache = new DocumentCacheManager();
+    hoverProvider = new EJSHoverProvider(mockParser, mockSymbolAnalyzer, mockCache);
   });
 
   describe("provideHover", () => {
-    it("should return null when cancellation is requested", () => {
+    it("should return null when cancellation is requested", async () => {
       const cancelledToken = {
         isCancellationRequested: true,
       } as vscode.CancellationToken;
       const position = new vscode.Position(0, 5);
 
-      const result = hoverProvider.provideHover(
+      const result = await hoverProvider.provideHover(
         mockDocument,
         position,
         cancelledToken
@@ -92,7 +94,7 @@ describe("EJSHoverProvider", () => {
       expect(result).toBeNull();
     });
 
-    it("should return null when not inside a JavaScript block", () => {
+    it("should return null when not inside a JavaScript block", async () => {
       const position = new vscode.Position(0, 5);
       const parsedDocument: ParsedEJSDocument = {
         jsBlocks: [
@@ -110,7 +112,7 @@ describe("EJSHoverProvider", () => {
 
       vi.mocked(mockParser.parseDocument).mockReturnValue(parsedDocument);
 
-      const result = hoverProvider.provideHover(
+      const result = await hoverProvider.provideHover(
         mockDocument,
         position,
         mockCancellationToken
@@ -119,7 +121,7 @@ describe("EJSHoverProvider", () => {
       expect(result).toBeNull();
     });
 
-    it("should return null when no word is found at position", () => {
+    it("should return null when no word is found at position", async () => {
       const position = new vscode.Position(2, 10);
       const parsedDocument: ParsedEJSDocument = {
         jsBlocks: [
@@ -138,7 +140,7 @@ describe("EJSHoverProvider", () => {
       vi.mocked(mockParser.parseDocument).mockReturnValue(parsedDocument);
       vi.mocked(mockDocument.getWordRangeAtPosition).mockReturnValue(undefined);
 
-      const result = hoverProvider.provideHover(
+      const result = await hoverProvider.provideHover(
         mockDocument,
         position,
         mockCancellationToken
@@ -147,7 +149,7 @@ describe("EJSHoverProvider", () => {
       expect(result).toBeNull();
     });
 
-    it("should return null when word is not a valid identifier", () => {
+    it("should return null when word is not a valid identifier", async () => {
       const position = new vscode.Position(2, 10);
       const wordRange = new vscode.Range(
         new vscode.Position(2, 8),
@@ -171,7 +173,7 @@ describe("EJSHoverProvider", () => {
       vi.mocked(mockDocument.getWordRangeAtPosition).mockReturnValue(wordRange);
       vi.mocked(mockDocument.getText).mockReturnValue("123invalid");
 
-      const result = hoverProvider.provideHover(
+      const result = await hoverProvider.provideHover(
         mockDocument,
         position,
         mockCancellationToken
@@ -180,7 +182,7 @@ describe("EJSHoverProvider", () => {
       expect(result).toBeNull();
     });
 
-    it("should return null when symbol definition is not found", () => {
+    it("should return null when symbol definition is not found", async () => {
       const position = new vscode.Position(2, 10);
       const wordRange = new vscode.Range(
         new vscode.Position(2, 8),
@@ -205,7 +207,7 @@ describe("EJSHoverProvider", () => {
       vi.mocked(mockDocument.getText).mockReturnValue("test");
       vi.mocked(mockSymbolAnalyzer.analyzeSymbols).mockReturnValue([]);
 
-      const result = hoverProvider.provideHover(
+      const result = await hoverProvider.provideHover(
         mockDocument,
         position,
         mockCancellationToken
@@ -214,7 +216,7 @@ describe("EJSHoverProvider", () => {
       expect(result).toBeNull();
     });
 
-    it("should return hover information when symbol definition is found", () => {
+    it("should return hover information when symbol definition is found", async () => {
       const position = new vscode.Position(2, 10);
       const wordRange = new vscode.Range(
         new vscode.Position(2, 8),
@@ -250,7 +252,7 @@ describe("EJSHoverProvider", () => {
         symbolInfo,
       ]);
 
-      const result = hoverProvider.provideHover(
+      const result = await hoverProvider.provideHover(
         mockDocument,
         position,
         mockCancellationToken
@@ -261,7 +263,7 @@ describe("EJSHoverProvider", () => {
       expect(vscode.Hover).toHaveBeenCalledWith(expect.any(Object), wordRange);
     });
 
-    it("should handle errors gracefully and return null", () => {
+    it("should handle errors gracefully and return null", async () => {
       const position = new vscode.Position(2, 10);
 
       vi.mocked(mockParser.parseDocument).mockImplementation(() => {
@@ -272,7 +274,7 @@ describe("EJSHoverProvider", () => {
         .spyOn(console, "error")
         .mockImplementation(() => {});
 
-      const result = hoverProvider.provideHover(
+      const result = await hoverProvider.provideHover(
         mockDocument,
         position,
         mockCancellationToken
