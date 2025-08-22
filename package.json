@@ -1,12 +1,17 @@
 {
   "name": "ejs-syntax-highlighting",
-  "displayName": "EJS Syntax Highlighting",
+  "displayName": "Better EJS",
   "description": "Syntax highlighting support for EJS templates",
+  "repository": {
+    "url": "https://github.com/hoojiNT/ejsext"
+  },
+  "publisher": "hoojint",
   "author": {
     "name": "hoojiNT",
     "email": "thehoinguyen@outlook.com"
   },
   "version": "0.0.1",
+  "license": "MIT",
   "icon": "ejs.png",
   "engines": {
     "vscode": "^1.74.0"

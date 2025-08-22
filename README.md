@@ -1,26 +1,26 @@
 # EJS Syntax Highlighting
 
-Extension VS Code để hỗ trợ syntax highlighting cho EJS templates.
+VS Code extension for EJS template syntax highlighting support.
 
-## Tính năng
+## Features
 
-- Syntax highlighting cho EJS tags: `<%`, `<%=`, `<%-`, `<%#`
-- Auto-closing pairs cho EJS brackets
-- Comment support cho EJS comments
-- Tích hợp với HTML syntax highlighting
+- Syntax highlighting for EJS tags: `<%`, `<%=`, `<%-`, `<%#`
+- Auto-closing pairs for EJS brackets
+- Comment support for EJS comments
+- Integration with HTML syntax highlighting
 
-## Cài đặt
+## Installation
 
-1. Mở VS Code
-2. Nhấn `Ctrl+Shift+P` để mở Command Palette
-3. Gõ "Extensions: Install from VSIX"
-4. Chọn file .vsix của extension
+1. Open VS Code
+2. Press `Ctrl+Shift+P` to open Command Palette
+3. Type "Extensions: Install from VSIX"
+4. Select the extension's .vsix file
 
-## Sử dụng
+## Usage
 
-Extension sẽ tự động kích hoạt khi bạn mở file có đuôi `.ejs`.
+The extension will automatically activate when you open files with `.ejs` extension.
 
-## Các EJS tags được hỗ trợ
+## Supported EJS tags
 
 - `<% %>` - Scriptlet tags (JavaScript code)
 - `<%= %>` - Expression tags (output escaped)
